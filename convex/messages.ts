@@ -14,6 +14,7 @@ export const addThreadMessage = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
+    console.log(user, 'hihi');
 
     const message = await ctx.db.insert('messages', {
       ...args,
@@ -26,5 +27,6 @@ export const addThreadMessage = mutation({
     if (args.threadId) {
       // TODO
     }
+    return message;
   },
 });

@@ -5,7 +5,7 @@ import {
   QueryCtx,
 } from '@/convex/_generated/server';
 import { v } from 'convex/values';
-import { Id } from './_generated/dataModel';
+import { Doc, Id } from './_generated/dataModel';
 
 // export const getAllUsers = query({
 //   args: {},
@@ -64,7 +64,8 @@ export const getUserById = query({
     userId: v.id('users'),
   },
   handler: async (ctx, args) => {
-    return await getUserWithImageUrl(ctx, args.userId);
+    const user = await ctx.db.get(args.userId);
+    return await getUserWithImageUrl(ctx, user);
   },
 });
 
@@ -92,9 +93,10 @@ export const generateUploadUrl = mutation({
 });
 
 // REUSABLE FUNCTION
-const getUserWithImageUrl = async (ctx: QueryCtx, userId: Id<'users'>) => {
-  const user = await ctx.db.get(userId);
-
+const getUserWithImageUrl = async (
+  ctx: QueryCtx,
+  user: Doc<'users'> | null
+) => {
   if (!user?.imageUrl || user?.imageUrl.startsWith('http')) {
     return user;
   }
@@ -104,50 +106,38 @@ const getUserWithImageUrl = async (ctx: QueryCtx, userId: Id<'users'>) => {
   return { ...user, imageUrl };
 };
 
-// IDENTITY CHECK
-export const current = query({
-  args: {},
-  handler: async (ctx) => {
-    return await getCurrentUser(ctx);
-  },
-});
-
 export const deleteFromClerk = internalMutation({
   args: { clerkUserId: v.string() },
   async handler(ctx, { clerkUserId }) {
     const user = await userByExternalId(ctx, clerkUserId);
 
-    if (user != null) {
+    if (user !== null) {
       await ctx.db.delete(user._id);
     } else {
       console.warn(
-        `Can't delete user, there is none for clerkId: ${clerkUserId}`
+        `Can't delete user, there is none for Clerk user ID: ${clerkUserId}`
       );
     }
   },
 });
 
 export async function getCurrentUserOrThrow(ctx: QueryCtx) {
-  const userRecord = await ctx.auth.getUserIdentity();
-  if (!userRecord) {
-    throw new Error("Can't get current user");
-  }
-
+  const userRecord = await getCurrentUser(ctx);
+  if (!userRecord) throw new Error("Can't get current user");
   return userRecord;
 }
 
 export async function getCurrentUser(ctx: QueryCtx) {
   const identity = await ctx.auth.getUserIdentity();
-  if (identity == null) {
+  if (identity === null) {
     return null;
   }
-
   return await userByExternalId(ctx, identity.subject);
 }
 
 async function userByExternalId(ctx: QueryCtx, externalId: string) {
   return await ctx.db
     .query('users')
-    .filter((q) => q.eq('clerkId', externalId))
+    .withIndex('byClerkId', (q) => q.eq('clerkId', externalId))
     .unique();
 }
