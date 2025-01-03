@@ -43,7 +43,6 @@ const ThreadComposer = ({
 
   const handleSubmit = async () => {
     const mediaIds = await Promise.all(mediaFiles.map(uploadMediaFile));
-    console.log(mediaIds, '미디어 아이디');
 
     addThread({
       threadId,
@@ -115,7 +114,21 @@ const ThreadComposer = ({
   };
 
   return (
-    <View>
+    <TouchableOpacity
+      onPress={() => {
+        router.push('/(auth)/(modal)/create');
+      }}
+      style={
+        isPreview && {
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          pointerEvents: 'box-only',
+          height: 100,
+        }
+      }
+    >
       <Stack.Screen
         options={{
           headerLeft: () => (
@@ -214,7 +227,7 @@ const ThreadComposer = ({
           </TouchableOpacity>
         </View>
       </InputAccessoryView>
-    </View>
+    </TouchableOpacity>
   );
 };
 

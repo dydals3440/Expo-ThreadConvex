@@ -38,7 +38,7 @@ const Layout = () => {
               <Text style={styles.logoutText}>Log out</Text>
             </TouchableOpacity>
           ),
-          headerShown: true,
+          headerShown: false,
         }}
       />
       <Tabs.Screen
