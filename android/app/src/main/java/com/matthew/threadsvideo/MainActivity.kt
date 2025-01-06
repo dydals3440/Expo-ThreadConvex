@@ -1,4 +1,4 @@
-package com.anonymous.threads
+package com.matthew.threadsvideo
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

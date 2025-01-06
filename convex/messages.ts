@@ -23,14 +23,27 @@ export const addThreadMessage = mutation({
       retweetCount: 0,
     });
 
+    // Trigger push notification
     if (args.threadId) {
-      // threadId is present, update the thread's comment count
       const originalThread = await ctx.db.get(args.threadId);
       await ctx.db.patch(args.threadId, {
         commentCount: (originalThread?.commentCount || 0) + 1,
       });
-    }
 
+      if (originalThread?.userId) {
+        const user = await ctx.db.get(originalThread?.userId);
+        const pushToken = user?.pushToken;
+
+        if (!pushToken) return;
+
+        await ctx.scheduler.runAfter(500, internal.push.sendPushNotification, {
+          pushToken,
+          messageTitle: 'New comment',
+          messageBody: args.content,
+          threadId: args.threadId,
+        });
+      }
+    }
     return message;
   },
 });
