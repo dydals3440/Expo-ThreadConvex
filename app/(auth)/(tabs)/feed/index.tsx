@@ -7,7 +7,7 @@ import {
   View,
   TouchableOpacity,
 } from 'react-native';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { usePaginatedQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Colors } from '@/constants/Colors';
@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ThreadComposer from '@/components/ThreadComposer';
 import Thread from '@/components/Thread';
 import { Doc } from '@/convex/_generated/dataModel';
-import { Link, useNavigation } from 'expo-router';
+import { Link, useFocusEffect, useNavigation } from 'expo-router';
 import {
   runOnJS,
   useAnimatedScrollHandler,
@@ -47,14 +47,14 @@ const Page = () => {
     } else if (scrollOffset.value > tabBarHeight) {
       newMarginBottom = -tabBarHeight;
     }
-    navigation.getParent()?.setOptions({
-      tabBarStyle: { marginBottom: newMarginBottom },
-    });
+
+    navigation
+      .getParent()
+      ?.setOptions({ tabBarStyle: { marginBottom: newMarginBottom } });
   };
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
-      console.log(event.contentOffset.y);
       if (isFocused) {
         scrollOffset.value = event.contentOffset.y;
         runOnJS(updateTabBar)();
@@ -73,6 +73,18 @@ const Page = () => {
       setRefreshing(false);
     }, 2000);
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      // Do something when the screen is focused
+
+      return () => {
+        navigation
+          .getParent()
+          ?.setOptions({ tabBarStyle: { marginBottom: 0 } });
+      };
+    }, [])
+  );
 
   return (
     <Animated.FlatList
