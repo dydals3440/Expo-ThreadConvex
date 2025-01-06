@@ -51,13 +51,14 @@ export const getThreads = query({
         .paginate(args.paginationOpts);
     }
 
-    const messagesWithCreator = await Promise.all(
+    const threadsWithMedia = await Promise.all(
       threads.page.map(async (thread) => {
         const creator = await getMessageCreator(ctx, thread.userId);
-        console.log(creator);
+        const mediaUrls = await getMediaUrls(ctx, thread.mediaFiles);
 
         return {
           ...thread,
+          mediaFiles: mediaUrls,
           creator,
         };
       })
@@ -65,24 +66,57 @@ export const getThreads = query({
 
     return {
       ...threads,
-      page: messagesWithCreator,
+      page: threadsWithMedia,
     };
+  },
+});
+
+export const likeThread = mutation({
+  args: {
+    threadId: v.id('messages'),
+  },
+  handler: async (ctx, args) => {
+    await getCurrentUserOrThrow(ctx);
+    const message = await ctx.db.get(args.threadId);
+
+    await ctx.db.patch(args.threadId, {
+      likeCount: (message?.likeCount || 0) + 1,
+    });
   },
 });
 
 const getMessageCreator = async (ctx: QueryCtx, userId: Id<'users'>) => {
   const user = await ctx.db.get(userId);
-
   if (!user?.imageUrl || user.imageUrl.startsWith('http')) {
     return user;
   }
 
-  const imageUrl = await ctx.storage.getUrl(user.imageUrl as Id<'_storage'>);
+  const url = await ctx.storage.getUrl(user.imageUrl as Id<'_storage'>);
 
   return {
     ...user,
-    imageUrl,
+    imageUrl: url,
   };
+};
+
+const getMediaUrls = async (
+  ctx: QueryCtx,
+  mediaFiles: string[] | undefined
+) => {
+  if (!mediaFiles || mediaFiles.length === 0) {
+    return [];
+  }
+
+  const urlPromises = mediaFiles.map((file) =>
+    ctx.storage.getUrl(file as Id<'_storage'>)
+  );
+  const results = await Promise.allSettled(urlPromises);
+  return results
+    .filter(
+      (result): result is PromiseFulfilledResult<string> =>
+        result.status === 'fulfilled'
+    )
+    .map((result) => result.value);
 };
 
 export const generateUploadUrl = mutation({
