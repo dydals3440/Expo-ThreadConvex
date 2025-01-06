@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '@clerk/clerk-react';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import UserProfile from './UserProfile';
 import Tabs from './Tabs';
 import { usePaginatedQuery } from 'convex/react';
@@ -41,9 +41,13 @@ const Profile = ({ userId, showBackButton = true }: ProfileProps) => {
       <FlatList
         data={results}
         renderItem={({ item }) => (
-          <Thread
-            thread={item as Doc<'messages'> & { creator: Doc<'users'> }}
-          />
+          <Link href={`/(auth)/(tabs)/feed/${item._id}`} asChild>
+            <TouchableOpacity>
+              <Thread
+                thread={item as Doc<'messages'> & { creator: Doc<'users'> }}
+              />
+            </TouchableOpacity>
+          </Link>
         )}
         ListEmptyComponent={
           <Text style={styles.tabContentText}>
@@ -79,8 +83,12 @@ const Profile = ({ userId, showBackButton = true }: ProfileProps) => {
                 </TouchableOpacity>
               </View>
             </View>
-            {userId && <UserProfile userId={userId} />}
-            {userProfile && <UserProfile userId={userProfile?._id} />}
+            {userId ? (
+              <UserProfile userId={userId} />
+            ) : (
+              <UserProfile userId={userProfile?._id} />
+            )}
+
             <Tabs onTabChange={() => {}} />
           </>
         }

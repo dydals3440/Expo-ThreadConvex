@@ -128,10 +128,11 @@ const styles = StyleSheet.create({
   fullButton: {
     flex: 1,
     padding: 10,
-    borderWidth: 1,
     borderRadius: 5,
-    alignItems: 'center',
+    borderWidth: 1,
+    backgroundColor: '#000',
     justifyContent: 'center',
+    alignItems: 'center',
   },
   fullButtonText: {
     fontWeight: 'bold',

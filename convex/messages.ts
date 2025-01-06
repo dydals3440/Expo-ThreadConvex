@@ -85,6 +85,24 @@ export const likeThread = mutation({
   },
 });
 
+export const getThreadById = query({
+  args: {
+    messageId: v.id('messages'),
+  },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) return null;
+
+    const creator = await getMessageCreator(ctx, message.userId);
+    const mediaUrls = await getMediaUrls(ctx, message.mediaFiles);
+
+    return {
+      ...message,
+      mediaFiles: mediaUrls,
+      creator,
+    };
+  },
+});
 const getMessageCreator = async (ctx: QueryCtx, userId: Id<'users'>) => {
   const user = await ctx.db.get(userId);
   if (!user?.imageUrl || user.imageUrl.startsWith('http')) {
